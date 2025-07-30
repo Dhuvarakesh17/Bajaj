@@ -1,22 +1,27 @@
+# main.py
+
 from fastapi import FastAPI, Request, Header, HTTPException
 from pydantic import BaseModel
 from typing import List
 import uvicorn
 import fitz  # PyMuPDF
 from sentence_transformers import SentenceTransformer, util
-from openai import OpenAI
+import google.generativeai as genai
 import os
 from dotenv import load_dotenv
 
+# === Load Env Variables ===
 load_dotenv()
+
+# === Gemini Setup ===
+genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+GEMINI_MODEL = genai.GenerativeModel("gemini-2.0-flash")
+
+# === FastAPI App ===
 app = FastAPI()
 
-# === Setup ===
+# === Embedding Model Setup ===
 EMBEDDING_MODEL = SentenceTransformer("all-MiniLM-L6-v2")
-client = OpenAI(
-    api_key=os.getenv("OPENROUTER_API_KEY"),
-    base_url="https://openrouter.ai/api/v1"
-)
 
 # === Data Models ===
 class QueryRequest(BaseModel):
@@ -48,22 +53,16 @@ def get_top_chunks(question: str, chunks: List[str], top_k=5) -> List[str]:
     return [chunks[i] for i in top_results]
 
 def get_answer_rag(question: str, context_chunks: List[str]) -> str:
-    prompt = f"""
-Answer the question based only on the context below. Be precise.
+    prompt = f"""Use the context below to answer the user's question accurately and precisely.
 
 Context:
 {''.join(context_chunks)}
 
 Question: {question}
-Answer:
-"""
-    response = client.chat.completions.create(
-        model="openai/gpt-4",
-        messages=[{"role": "user", "content": prompt}],
-        temperature=0.2,
-        max_tokens=150
-    )
-    return response.choices[0].message.content.strip()
+
+Answer:"""
+    response = GEMINI_MODEL.generate_content(prompt)
+    return response.text.strip()
 
 # === Main Endpoint ===
 @app.post("/hackrx/run", response_model=QueryResponse)
@@ -82,6 +81,6 @@ def handle_query(request: QueryRequest, authorization: str = Header(...)):
 
     return QueryResponse(answers=answers)
 
-# === Run locally ===
+# === Local Development Server ===
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
