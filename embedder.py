@@ -1,3 +1,4 @@
+#embedder.py
 from sentence_transformers import SentenceTransformer
 
 EMBED_MODEL = SentenceTransformer("all-MiniLM-L6-v2")

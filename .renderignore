@@ -1,0 +1,26 @@
+# Ignore everything except your main app files and requirements
+*
+
+# But include these
+!main.py
+!db.py
+!models.py
+!parse_pdf.py
+!chunker.py
+!embedder.py
+!vectorstore.py
+!llm.py
+!base.py
+!requirements.txt
+!.env
+
+# Ignore virtual environments, git, and other stuff
+.venv/
+.git/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.swp
+.DS_Store
+.env.local

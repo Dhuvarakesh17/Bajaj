@@ -1,3 +1,4 @@
+#chunker.py
 import textwrap
 
 def chunk_text(text: str, max_length=500):
