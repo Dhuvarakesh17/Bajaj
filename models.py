@@ -1,7 +1,6 @@
-# models.py
-from sqlalchemy import Column, Integer, String, Text, DateTime
+from sqlalchemy import Column, Integer, String, Text, DateTime, Float
 from datetime import datetime
-from base import Base  # ✅ use Base from base.py
+from base import Base
 
 class QueryLog(Base):
     __tablename__ = "query_logs"
@@ -11,4 +10,5 @@ class QueryLog(Base):
     answer = Column(Text)
     document_url = Column(String)
     token_used = Column(String)
+    response_time = Column(Float)
     timestamp = Column(DateTime, default=datetime.utcnow)

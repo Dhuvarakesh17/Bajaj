@@ -1,12 +1,11 @@
 fastapi==0.110.0
 uvicorn[standard]==0.29.0
+pydantic==2.7.1
+python-dotenv==1.0.1
 requests==2.31.0
 PyMuPDF==1.23.22
 sentence-transformers==2.7.0
-torch==1.13.1+cpu  # CPU-only torch (much smaller)
-numpy>=1.23.0
-python-dotenv==1.0.1
-google-generativeai==0.5.4
 pinecone-client==3.0.2
-SQLAlchemy==2.0.30
-supabase
+sqlalchemy==2.0.30
+psycopg2-binary==2.9.9
+google-generativeai==0.5.4
