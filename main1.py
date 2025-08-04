@@ -1,4 +1,3 @@
-# main.py (Optimized with async fix)
 from fastapi import FastAPI, Header, HTTPException
 from pydantic import BaseModel
 from typing import List
@@ -39,29 +38,45 @@ async def handle_query(request: QueryRequest, authorization: str = Header(...)):
         chunk_embeddings = embed_chunks(chunks)
         upsert_chunks(doc_id, chunks, chunk_embeddings)
 
-    async def process_question(q):
+    # async task with scheduled delay to avoid 429
+    async def process_question_with_delay(q, delay):
+        await asyncio.sleep(delay)
         q_embed = get_embedding(q)
         top_chunks = query_top_chunks(q_embed, top_k=3)
+        fallback_chunks = query_top_chunks(q_embed, top_k=10)
+
         start = time.perf_counter()
-        answer = await get_answer_rag_async(q, top_chunks)
+        answer = await get_answer_rag_async(
+            question=q,
+            context_chunks=top_chunks,
+            fallback_chunks=fallback_chunks,
+            document_type=request.document_type,
+            debug=True,
+            full_text=text,
+            keyword_fallback=True,
+            keyword_list=q.lower().split()
+        )
         elapsed = round(time.perf_counter() - start, 2)
         return q, answer, elapsed
 
-    results = await asyncio.gather(*[process_question(q) for q in request.questions])
+    # stagger tasks every 6.5s to stay within 10/min limit
+    tasks = [
+        process_question_with_delay(q, i * 6.5)
+        for i, q in enumerate(request.questions)
+    ]
+    results = await asyncio.gather(*tasks)
+
     db = SessionLocal()
     answers = []
-
     for q, a, t in results:
         answers.append(a)
-        log = QueryLog(
+        db.add(QueryLog(
             question=q,
             answer=a,
             document_url=request.documents,
             token_used=authorization,
             response_time=t
-        )
-        db.add(log)
-
+        ))
     db.commit()
     db.close()
 

@@ -1,3 +1,8 @@
 .venv/
 .env
 _pycache_/
+temp.pdf
+render.yaml
+.renderignore
+*.log
+*.tmp
